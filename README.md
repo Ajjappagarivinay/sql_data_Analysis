@@ -55,7 +55,7 @@ select * from sql_project_2.retail_sales where sale_time is null;
 
 select * from sql_project_2.retail_sales 
 where 
-	transactions_id is null 
+    transactions_id is null 
     or
     sale_date is null
     or
@@ -67,7 +67,7 @@ where
     or
     category is null
     or
-	quantity is null
+    quantity is null
     or
     price_per_unit is null
     or
@@ -77,7 +77,7 @@ where
     
 DELETE FROM sql_project_2.retail_sales 
 WHERE 
-	transactions_id IS NULL
+    transactions_id IS NULL
     OR sale_date IS NULL
     OR sale_time IS NULL
     OR customer_id IS NULL
