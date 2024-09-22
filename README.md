@@ -1,221 +1,283 @@
-# Retail Sales Analysis SQL Project
+# Netflix Movies and TV Shows Data Analysis using SQL
 
-## Project Overview
+![](https://github.com/najirh/netflix_sql_project/blob/main/logo.png)
 
-**Project Title**: Retail Sales Analysis  
-**Level**: Beginner  
-**Database**: `sql_project_2`
-
-This project is designed to demonstrate SQL skills and techniques typically used by data analysts to explore, clean, and analyze retail sales data. The project involves setting up a retail sales database, performing exploratory data analysis (EDA), and answering specific business questions through SQL queries. This project is ideal for those who are starting their journey in data analysis and want to build a solid foundation in SQL.
+## Overview
+This project involves a comprehensive analysis of Netflix's movies and TV shows data using SQL. The goal is to extract valuable insights and answer various business questions based on the dataset. The following README provides a detailed account of the project's objectives, business problems, solutions, findings, and conclusions.
 
 ## Objectives
 
-1. **Set up a retail sales database**: Create and populate a retail sales database with the provided sales data.
-2. **Data Cleaning**: Identify and remove any records with missing or null values.
-3. **Exploratory Data Analysis (EDA)**: Perform basic exploratory data analysis to understand the dataset.
-4. **Business Analysis**: Use SQL to answer specific business questions and derive insights from the sales data.
+- Analyze the distribution of content types (movies vs TV shows).
+- Identify the most common ratings for movies and TV shows.
+- List and analyze content based on release years, countries, and durations.
+- Explore and categorize content based on specific criteria and keywords.
 
-## Project Structure
+## Dataset
 
-### 1. Database Setup
+The data for this project is sourced from the Kaggle dataset:
 
-- **Database Creation**: The project starts by creating a database named `sql_project_2`.
-- **Table Creation**: A table named `retail_sales` is created to store the sales data. The table structure includes columns for transaction ID, sale date, sale time, customer ID, gender, age, product category, quantity sold, price per unit, cost of goods sold (COGS), and total sale amount.
+- **Dataset Link:** [Movies Dataset](https://www.kaggle.com/datasets/shivamb/netflix-shows?resource=download)
+
+## Schema
 
 ```sql
-CREATE DATABASE sql_project_2;
-
-CREATE TABLE retail_sales
+DROP TABLE IF EXISTS netflix;
+CREATE TABLE netflix
 (
-    transactions_id INT PRIMARY KEY,
-    sale_date DATE,	
-    sale_time TIME,
-    customer_id INT,	
-    gender VARCHAR(10),
-    age INT,
-    category VARCHAR(35),
-    quantity INT,
-    price_per_unit FLOAT,	
-    cogs FLOAT,
-    total_sale FLOAT
+    show_id      VARCHAR(5),
+    type         VARCHAR(10),
+    title        VARCHAR(250),
+    director     VARCHAR(550),
+    casts        VARCHAR(1050),
+    country      VARCHAR(550),
+    date_added   VARCHAR(55),
+    release_year INT,
+    rating       VARCHAR(15),
+    duration     VARCHAR(15),
+    listed_in    VARCHAR(250),
+    description  VARCHAR(550)
 );
 ```
 
-### 2. Data Exploration & Cleaning
+## Business Problems and Solutions
 
-- **Record Count**: Determine the total number of records in the dataset.
-- **Customer Count**: Find out how many unique customers are in the dataset.
-- **Category Count**: Identify all unique product categories in the dataset.
-- **Null Value Check**: Check for any null values in the dataset and delete records with missing data.
+### 1. Count the Number of Movies vs TV Shows
 
 ```sql
-select * from sql_project_2.retail_sales where transactions_id is null;
-select * from sql_project_2.retail_sales where sale_date is null;
-select * from sql_project_2.retail_sales where sale_time is null;
-
-select * from sql_project_2.retail_sales 
-where 
-    transactions_id is null 
-    or
-    sale_date is null
-    or
-    sale_time is null
-    or
-    customer_id is null
-    or
-    gender is null
-    or
-    category is null
-    or
-    quantity is null
-    or
-    price_per_unit is null
-    or
-    cogs is null
-    or
-    total_sale is null;
-    
-DELETE FROM sql_project_2.retail_sales 
-WHERE 
-    transactions_id IS NULL
-    OR sale_date IS NULL
-    OR sale_time IS NULL
-    OR customer_id IS NULL
-    OR gender IS NULL
-    OR category IS NULL
-    OR quantity IS NULL
-    OR price_per_unit IS NULL
-    OR cogs IS NULL
-    OR total_sale IS NULL;
+SELECT 
+    type,
+    COUNT(*)
+FROM netflix
+GROUP BY 1;
 ```
 
-### 3. Data Analysis & Findings
+**Objective:** Determine the distribution of content types on Netflix.
 
-The following SQL queries were developed to answer specific business questions:
+### 2. Find the Most Common Rating for Movies and TV Shows
 
-1. **Write a SQL query to retrieve all columns for sales made on '2022-11-05**:
 ```sql
-select * from sql_project_2.retail_sales 
-where sale_date = '2022-11-05'; 
+WITH RatingCounts AS (
+    SELECT 
+        type,
+        rating,
+        COUNT(*) AS rating_count
+    FROM netflix
+    GROUP BY type, rating
+),
+RankedRatings AS (
+    SELECT 
+        type,
+        rating,
+        rating_count,
+        RANK() OVER (PARTITION BY type ORDER BY rating_count DESC) AS rank
+    FROM RatingCounts
+)
+SELECT 
+    type,
+    rating AS most_frequent_rating
+FROM RankedRatings
+WHERE rank = 1;
 ```
 
-2. **Write a SQL query to retrieve all transactions where the category is 'Clothing' and the quantity sold is more than 4 in the month of Nov-2022**:
-```sql
-select * from sql_project_2.retail_sales 
-where category = 'Clothing'
-and  DATE_FORMAT(sale_date, '%Y-%m') = '2022-11'
-and quantity >= 4;
-```
+**Objective:** Identify the most frequently occurring rating for each type of content.
 
-3. **Write a SQL query to calculate the total sales (total_sale) for each category.**:
-```sql
-select category,
-sum(total_sale) as total_sales,
-count(*) as total_orders 
-from sql_project_2.retail_sales 
-group by category;
-```
+### 3. List All Movies Released in a Specific Year (e.g., 2020)
 
-4. **Write a SQL query to find the average age of customers who purchased items from the 'Beauty' category.**:
-```sql
-select round(avg(age),2) as avg_age
-from sql_project_2.retail_sales 
-where category = 'Beauty';
-```
-
-5. **Write a SQL query to find all transactions where the total_sale is greater than 1000.**:
-```sql
-select * from  sql_project_2.retail_sales 
-where total_sale > 1000;
-```
-
-6. **Write a SQL query to find the total number of transactions (transaction_id) made by each gender in each category.**:
-```sql
-select category,gender, 
-count(*) as total_transactions
-from sql_project_2.retail_sales 
-group by gender,category
-order by category;
-```
-
-7. **Write a SQL query to calculate the average sale for each month. Find out best selling month in each year**:
 ```sql
 SELECT * 
+FROM netflix
+WHERE release_year = 2020;
+```
+
+**Objective:** Retrieve all movies released in a specific year.
+
+### 4. Find the Top 5 Countries with the Most Content on Netflix
+
+```sql
+SELECT * 
+FROM
+(
+    SELECT 
+        UNNEST(STRING_TO_ARRAY(country, ',')) AS country,
+        COUNT(*) AS total_content
+    FROM netflix
+    GROUP BY 1
+) AS t1
+WHERE country IS NOT NULL
+ORDER BY total_content DESC
+LIMIT 5;
+```
+
+**Objective:** Identify the top 5 countries with the highest number of content items.
+
+### 5. Identify the Longest Movie
+
+```sql
+SELECT 
+    *
+FROM netflix
+WHERE type = 'Movie'
+ORDER BY SPLIT_PART(duration, ' ', 1)::INT DESC;
+```
+
+**Objective:** Find the movie with the longest duration.
+
+### 6. Find Content Added in the Last 5 Years
+
+```sql
+SELECT *
+FROM netflix
+WHERE TO_DATE(date_added, 'Month DD, YYYY') >= CURRENT_DATE - INTERVAL '5 years';
+```
+
+**Objective:** Retrieve content added to Netflix in the last 5 years.
+
+### 7. Find All Movies/TV Shows by Director 'Rajiv Chilaka'
+
+```sql
+SELECT *
 FROM (
     SELECT 
-        YEAR(sale_date) AS year,
-        MONTH(sale_date) AS month,
-        ROUND(AVG(total_sale), 2) AS avg_sale,
-        RANK() OVER (PARTITION BY YEAR(sale_date) ORDER BY ROUND(AVG(total_sale), 2) DESC) AS ranking
-    FROM sql_project_2.retail_sales
-    GROUP BY YEAR(sale_date), MONTH(sale_date)
-) AS t1
-WHERE ranking = 1;
+        *,
+        UNNEST(STRING_TO_ARRAY(director, ',')) AS director_name
+    FROM netflix
+) AS t
+WHERE director_name = 'Rajiv Chilaka';
 ```
 
-8. **Write a SQL query to find the top 5 customers based on the highest total sales**:
+**Objective:** List all content directed by 'Rajiv Chilaka'.
+
+### 8. List All TV Shows with More Than 5 Seasons
+
 ```sql
-select customer_id,
-    sum(total_sale) as net_sales
-from  sql_project_2.retail_sales
-group by customer_id
-order by net_sales desc limit 5;
+SELECT *
+FROM netflix
+WHERE type = 'TV Show'
+  AND SPLIT_PART(duration, ' ', 1)::INT > 5;
 ```
 
-9. **Write a SQL query to find the number of unique customers who purchased items from each category.**:
+**Objective:** Identify TV shows with more than 5 seasons.
+
+### 9. Count the Number of Content Items in Each Genre
+
 ```sql
-select category,
-    count(distinct customer_id) as unique_customers
-from sql_project_2.retail_sales
-group by category;
-
+SELECT 
+    UNNEST(STRING_TO_ARRAY(listed_in, ',')) AS genre,
+    COUNT(*) AS total_content
+FROM netflix
+GROUP BY 1;
 ```
 
-10. **Write a SQL query to create each shift and number of orders (Example Morning <12, Afternoon Between 12 & 17, Evening >17)**:
+**Objective:** Count the number of content items in each genre.
+
+### 10.Find each year and the average numbers of content release in India on netflix. 
+return top 5 year with highest avg content release!
+
 ```sql
-with cte as
-	(select *,
-		case
-			when hour(sale_time) < 12 then 'Morning'
-			when hour(sale_time) between 12 and 17 then 'Afternoon'
-			else 'Evening'
-		end as shift
-	 from sql_project_2.retail_sales)
-select shift,
-	count(*) as total_orders
-from cte
-group by shift;
+SELECT 
+    country,
+    release_year,
+    COUNT(show_id) AS total_release,
+    ROUND(
+        COUNT(show_id)::numeric /
+        (SELECT COUNT(show_id) FROM netflix WHERE country = 'India')::numeric * 100, 2
+    ) AS avg_release
+FROM netflix
+WHERE country = 'India'
+GROUP BY country, release_year
+ORDER BY avg_release DESC
+LIMIT 5;
 ```
 
-## Findings
+**Objective:** Calculate and rank years by the average number of content releases by India.
 
-- **Customer Demographics**: The dataset includes customers from various age groups, with sales distributed across different categories such as Clothing and Beauty.
-- **High-Value Transactions**: Several transactions had a total sale amount greater than 1000, indicating premium purchases.
-- **Sales Trends**: Monthly analysis shows variations in sales, helping identify peak seasons.
-- **Customer Insights**: The analysis identifies the top-spending customers and the most popular product categories.
+### 11. List All Movies that are Documentaries
 
-## Reports
+```sql
+SELECT * 
+FROM netflix
+WHERE listed_in LIKE '%Documentaries';
+```
 
-- **Sales Summary**: A detailed report summarizing total sales, customer demographics, and category performance.
-- **Trend Analysis**: Insights into sales trends across different months and shifts.
-- **Customer Insights**: Reports on top customers and unique customer counts per category.
+**Objective:** Retrieve all movies classified as documentaries.
 
-## Conclusion
+### 12. Find All Content Without a Director
 
-This project serves as a comprehensive introduction to SQL for data analysts, covering database setup, data cleaning, exploratory data analysis, and business-driven SQL queries. The findings from this project can help drive business decisions by understanding sales patterns, customer behavior, and product performance.
+```sql
+SELECT * 
+FROM netflix
+WHERE director IS NULL;
+```
 
-## How to Use
+**Objective:** List content that does not have a director.
 
-1. **Clone the Repository**: Clone this project repository from GitHub.
-2. **Set Up the Database**: Run the SQL scripts provided in the `database_setup.sql` file to create and populate the database.
-3. **Run the Queries**: Use the SQL queries provided in the `analysis_queries.sql` file to perform your analysis.
-4. **Explore and Modify**: Feel free to modify the queries to explore different aspects of the dataset or answer additional business questions.
+### 13. Find How Many Movies Actor 'Salman Khan' Appeared in the Last 10 Years
 
-## Author - Ajjappagari Vinay
+```sql
+SELECT * 
+FROM netflix
+WHERE casts LIKE '%Salman Khan%'
+  AND release_year > EXTRACT(YEAR FROM CURRENT_DATE) - 10;
+```
+
+**Objective:** Count the number of movies featuring 'Salman Khan' in the last 10 years.
+
+### 14. Find the Top 10 Actors Who Have Appeared in the Highest Number of Movies Produced in India
+
+```sql
+SELECT 
+    UNNEST(STRING_TO_ARRAY(casts, ',')) AS actor,
+    COUNT(*)
+FROM netflix
+WHERE country = 'India'
+GROUP BY actor
+ORDER BY COUNT(*) DESC
+LIMIT 10;
+```
+
+**Objective:** Identify the top 10 actors with the most appearances in Indian-produced movies.
+
+### 15. Categorize Content Based on the Presence of 'Kill' and 'Violence' Keywords
+
+```sql
+SELECT 
+    category,
+    COUNT(*) AS content_count
+FROM (
+    SELECT 
+        CASE 
+            WHEN description ILIKE '%kill%' OR description ILIKE '%violence%' THEN 'Bad'
+            ELSE 'Good'
+        END AS category
+    FROM netflix
+) AS categorized_content
+GROUP BY category;
+```
+
+**Objective:** Categorize content as 'Bad' if it contains 'kill' or 'violence' and 'Good' otherwise. Count the number of items in each category.
+
+## Findings and Conclusion
+
+- **Content Distribution:** The dataset contains a diverse range of movies and TV shows with varying ratings and genres.
+- **Common Ratings:** Insights into the most common ratings provide an understanding of the content's target audience.
+- **Geographical Insights:** The top countries and the average content releases by India highlight regional content distribution.
+- **Content Categorization:** Categorizing content based on specific keywords helps in understanding the nature of content available on Netflix.
+
+This analysis provides a comprehensive view of Netflix's content and can help inform content strategy and decision-making.
+
+
+
+## Author - Zero Analyst
 
 This project is part of my portfolio, showcasing the SQL skills essential for data analyst roles. If you have any questions, feedback, or would like to collaborate, feel free to get in touch!
 
-## Linkedin ID:https://www.linkedin.com/in/ajjappagari-vinay-862752280/
-## Github ID:https://github.com/Ajjappagarivinay
+### Stay Updated and Join the Community
 
+For more content on SQL, data analysis, and other data-related topics, make sure to follow me on social media and join our community:
 
+- **YouTube**: [Subscribe to my channel for tutorials and insights](https://www.youtube.com/@zero_analyst)
+- **Instagram**: [Follow me for daily tips and updates](https://www.instagram.com/zero_analyst/)
+- **LinkedIn**: [Connect with me professionally](https://www.linkedin.com/in/najirr)
+- **Discord**: [Join our community to learn and grow together](https://discord.gg/36h5f2Z5PK)
+
+Thank you for your support, and I look forward to connecting with you!
